@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String          @id @default(uuid())
+  email         String          @unique
+  name          String
+  phoneNumber   String?
+  password      String
+  isVerified    Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  usersInGroups UsersInGroups[]
+  expensesAdded Expenses[]
+  expenseSplits ExpenseSplit[]
+  settlements1  Settlement[]    @relation("PayerRelation")
+  settlements2  Settlement[]    @relation("PayeeRelation")
+}
+
+model Group {
+  id            Int             @id @default(autoincrement())
+  name          String          @unique
+  description   String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  usersInGroups UsersInGroups[]
+  groupExpenses Expenses[]
+}
+
+model UsersInGroups {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  group     Group    @relation(fields: [groupId], references: [id])
+  groupId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, groupId]) // Ensure each user-group pair is unique
+}
+
+model Expenses {
+  id            Int            @id @default(autoincrement())
+  description   String
+  totalValue    Float
+  addedBy       User           @relation(fields: [addedById], references: [id])
+  addedById     String
+  group         Group?         @relation(fields: [groupId], references: [id])
+  groupId       Int?
+  expenseSplits ExpenseSplit[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model ExpenseSplit {
+  id         Int      @id @default(autoincrement())
+  expense    Expenses @relation(fields: [expenseId], references: [id])
+  expenseId  Int
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  owedAmount Float
+  paidAmount Float    @default(0.0) // Track if this user has paid any part
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([expenseId, userId]) // Ensure each user-expense pair is unique
+}
+
+model Settlement {
+  id        Int      @id @default(autoincrement())
+  payer     User     @relation("PayerRelation", fields: [payerId], references: [id])
+  payerId   String
+  payee     User     @relation("PayeeRelation", fields: [payeeId], references: [id])
+  payeeId   String
+  amount    Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([payerId, payeeId, createdAt]) // Ensure no duplicate settlement for the same payer-payee at the same time
+}
