@@ -1,8 +1,10 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const {createUser, loginUser, getUser} = require('@/models/user.model')
+const {createUser, loginUser, getUser, verifyEmail} = require('@/models/user.model')
+const {getGroupsByUser} = require('@/models/group.model')
 const router = express.Router();
 const auth = require('@/middleware/auth');
+const getUserId = require('@/utils/getLoggedInUser');
 
 // Register route with validation
 router.post('/register', [
@@ -48,6 +50,27 @@ router.post('/login', [
 router.get('/details', auth, async (req, res) => {
     const user = await getUser(req.query.email);
     return res.status(200).json({ message: 'User details fetched successfully!', user });
+});
+
+// verify user email
+router.get('/verify-email', async (req, res) => {
+    try {
+        const status = await verifyEmail(req.query.token);
+        if(status) {
+            return res.status(200).json({ message: 'Email verified successfully!' });
+        } else {
+            return res.status(200).json({ message: 'Email verification failed!' });
+        }        
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+});
+
+// get user details
+router.get('/groups', auth, async (req, res) => {
+   const user = getUserId(req);
+    const userGroups = await getGroupsByUser(req.query.email);
+    return res.status(200).json({ message: 'Users groups details fetched successfully!', userGroups });
 });
 
 
