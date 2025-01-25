@@ -23,7 +23,7 @@ const createUser = async (data) => {
         data: userData,
     });
 
-    sendVerificationEmail(user)
+    await sendVerificationEmail(user);
 
     return user;
 }
@@ -47,9 +47,7 @@ const loginUser = async (data) => {
     if (!passwordMatch) {
         throw new Error('Invalid password');
     }
-    const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '2 days' })
-
-    return token;
+    return jwt.sign({userId: user.id, email: user.email}, process.env.JWT_SECRET, {expiresIn: '2 days'});
 }
 
 const getUser = async (email) => {

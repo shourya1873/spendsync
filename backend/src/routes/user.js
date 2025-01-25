@@ -21,7 +21,7 @@ router.post('/register', [
     try {
         await createUser(req.body);        
     } catch (error) {
-        return res.status(200).json({ message: error.message });        
+        return res.status(500).json({ message: error.message });
     }
     
     return res.status(200).json({ message: 'User registered successfully!' });
@@ -41,7 +41,7 @@ router.post('/login', [
         const token = await loginUser(req.body);
         return res.status(200).json({ message: 'User Logged in successfully!', token });        
     } catch (error) {
-        return res.status(200).json({ message: error.message });        
+        return res.status(500).json({ message: error.message });
     }
     
 });
